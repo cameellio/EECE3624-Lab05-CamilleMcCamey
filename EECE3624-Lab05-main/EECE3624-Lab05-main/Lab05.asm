@@ -24,6 +24,11 @@ rjmp main					; allow reset to run this program
 /**********
 * Main code
 **********/
+.def BlinkFreq        = R20 ; holds blink rate (1-15 Hz)
+.equ BlinkFreqMin     = 1
+.equ BlinkFreqMax     = 15
+.equ InitialBlinkFreq = BlinkFreqMin
+
 .org 0x0020					; Move the "main" to 0x0020 to make room for ISRs
 main:                       ; jump here on reset
     ldi R16, HIGH(RAMEND)   ; initialize stack (default RAMEND = 0x10FF)
@@ -31,19 +36,25 @@ main:                       ; jump here on reset
     ldi R16, low(RAMEND)
     out SPL, R16
 
-	/* Additional Setup before Main Loop */
+	LDI R16, (1<<DDA7) ; Configure PORTA.7 as BOOT LED ouput
+	OUT DDRA, R16      ; other PORTA pins as inputs
 
-    LDI  R16,(1<<DDA7)		; Set the mask to make Port A.7 an output
-    OUT  DDRA,R16		; Load bitmask to PORTA register
+	LDI BlinkFreq, InitialBlinkFreq
     
 mainLoop:
+    ; PORT.3:0 show BlinkFreq lower 4 bits
+	MOV R17, BlinkFreq
+	ANDI R17, 0x0F
+	OUT PORTC, R17
+
     CBI  PORTA, PORTA7       ; turn BOOT LED on (active low) by clearing PORTA.7
 
     ; kill some time
-    ldi R16, 40             ; R16 is outer loop counter
+    ldi R16, 16             ; R16 is outer loop counter
+	SUB R16, BlinkFreq      ; R16 = 16 - BlinkFreq
 outer_loop1:
-    ldi R24, low(0x4000)     ; load low and high parts of R25:R24 pair with
-    ldi R25, high(0x4000)    ; loop count by loading registers separately
+    ldi R24, low(0xFFFF)     ; ~1 Hz when BlinkFreq = 1
+    ldi R25, high(0xFFFF)
     inner_loop1:
         sbiw R24, 1         ; decrement inner loop counter (R25:R24 pair)
         brne inner_loop1    ; loop back if R25:R24 isn't zero
@@ -53,10 +64,11 @@ outer_loop1:
     sbi PORTA, PORTA7       ; turn BOOT LED off (active low) by setting PORTA.7
 
     ; kill some more time
-    ldi R16, 40             ; R16 is outer loop counter
+    ldi R16, 16             ; R16 is outer loop counter
+	SUB R16, BlinkFreq      ; R16 = 16 - BlinkFreq
 outer_loop2:
-    ldi R24, low(0x4000)     ; load low and high parts of R25:R24 pair with
-    ldi R25, high(0x4000)    ; loop count by loading registers separately
+    ldi R24, low(0xFFFF)     ; load low and high parts of R25:R24 pair with
+    ldi R25, high(0xFFFF)    ; loop count by loading registers separately
     inner_loop2:
         sbiw R24, 1         ; decrement inner loop counter (R25:R24 pair)
         brne inner_loop2    ; loop back if R25:R24 isn't zero
