@@ -5,11 +5,13 @@
  *   Created: 02/19/2021
  * Processor: ATmega128A (on the ReadyAVR board)
  *
- * Modified by: <Your name goes here>
- * Modified on: <Date modified goes here>
+ * Modified by: Julia Camille McCamey
+ * Modified on: 09/22/2026
  *
- * This program...
- *
+ * This program implements a joystick to control the blink rate of an LED.
+ * Blinks the "BOOT" LED at rate of ~1 to 15 Hz within 15 steps.
+ * Toggle up increases rate by a step and toggle down decreases rate by a step.
+ * Blink rate is displayed in 4-bit binary on LEDs 0-3 connected to PORTC.0 through PORTC.3
  *************************************************************************/
 
  /*********
